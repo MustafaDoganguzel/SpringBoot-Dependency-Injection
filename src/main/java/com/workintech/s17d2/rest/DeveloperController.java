@@ -1,10 +1,10 @@
 package com.workintech.s17d2.rest;
 
 import com.workintech.s17d2.model.*;
-import com.workintech.s17d2.tax.DeveloperTax;
 import com.workintech.s17d2.tax.Taxable;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -18,7 +18,7 @@ public class DeveloperController {
 
 
     public Map<Integer, Developer> developers ;
-    public Taxable taxable;
+    private final Taxable taxable;
     @Autowired
     public DeveloperController(Taxable taxable){
         this.taxable = taxable;
@@ -26,14 +26,16 @@ public class DeveloperController {
 
     @PostConstruct
     public void init(){
-     this.developers = new HashMap<>();
+
+        this.developers = new HashMap<>();
+        developers.put(1, new Developer(1, "A", 1.1 , Experience.MID));
+
+
     }
 
     @GetMapping
     public List<Developer> getDeveloper(){
         return developers.values().stream().toList();
-
-
     }
 
     @GetMapping("/{id}")
@@ -41,20 +43,23 @@ public class DeveloperController {
         return developers.get(id);
     }
 
-    @PostMapping
-    public void setDevelopers(int id, String name, double salary, Experience experience){
 
-        if(experience == Experience.JUNIOR){
-            salary = salary - taxable.getSimpleTaxRate();
-            developers.put(id, new JuniorDeveloper(id, name , salary));
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public void setDevelopers(@RequestBody Developer developer){
+
+        if(developer.getExperience() == Experience.JUNIOR){
+
+            developers.put(developer.getId(),
+                    new JuniorDeveloper(developer.getId(), developer.getName() , developer.getSalary()));
         }
-        if (experience == Experience.MID){
-            salary= salary - taxable.getMiddleTaxRate();
-            developers.put(id, new MidDeveloper(id, name , salary));
+        if (developer.getExperience() == Experience.MID){
+            developers.put(developer.getId(),
+                    new MidDeveloper(developer.getId(), developer.getName() , developer.getSalary()));
         }
-        if (experience == Experience.SENIOR){
-            salary= salary - taxable.getUpperTaxRate();
-            developers.put(id, new SeniorDeveloper(id, name , salary));
+        if (developer.getExperience() == Experience.SENIOR){
+            developers.put(developer.getId(),
+                    new SeniorDeveloper(developer.getId(), developer.getName() , developer.getSalary()));
         }
     }
     @PutMapping("/{id}")
